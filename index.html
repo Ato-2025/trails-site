@@ -1,231 +1,665 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>TRAILS — Trust Network Diagram</title>
-<style>
-  @import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
-  :root{
-    --bg:#eef0f4; --panel:#ffffff; --panel-2:#f2f5f3;
-    --line:#e2e7e5; --line-soft:#ccd4d1;
-    --ink:#101513; --ink-soft:#47504c; --muted:#7a847f;
-    --accent:#2563eb; --accent-dim:#1d4ed8; --accent-soft:#e8eefe; --accent-glow:rgba(37,99,235,.16);
-    --mono:'IBM Plex Mono',ui-monospace,monospace;
-    --sans:'Inter',system-ui,sans-serif;
-    --disp:'Source Serif 4',Georgia,serif;
-  }
-  *{box-sizing:border-box;}
-  html,body{height:100%;margin:0;}
-  body{font-family:var(--sans);color:var(--ink);background:var(--bg);
-    line-height:1.5;-webkit-font-smoothing:antialiased;position:relative;overflow:hidden;}
-  body::before{content:'';position:fixed;top:-220px;left:50%;transform:translateX(-50%);
-    width:1200px;height:700px;border-radius:50%;
-    background:radial-gradient(ellipse at center, rgba(37,99,235,.22), transparent 68%);
-    filter:blur(20px);pointer-events:none;z-index:0;}
-  body::after{content:'';position:fixed;bottom:-260px;right:-160px;
-    width:640px;height:520px;border-radius:50%;
-    background:radial-gradient(ellipse at center, rgba(37,99,235,.14), transparent 70%);
-    filter:blur(20px);pointer-events:none;z-index:0;}
-
-  .page{position:relative;z-index:1;width:calc(100% - 72px);max-width:1180px;height:calc(100vh - 72px);
-    margin:36px auto;padding:32px 40px 2px;display:flex;flex-direction:column;gap:26px;
-    background:var(--panel);border-radius:16px;border:1px solid var(--line);
-    box-shadow:0 1px 3px rgba(16,21,19,.05), 0 24px 56px rgba(16,21,19,.09);overflow:hidden;}
-
-  /* ===== top row: hero (left) + donut (right) ===== */
-  .top-row{flex:0 0 auto;display:flex;gap:28px;min-height:0;}
-  .hero{flex:0.85;display:flex;flex-direction:column;justify-content:center;}
-  h1{font-family:var(--disp);font-size:32px;font-weight:600;line-height:1.24;letter-spacing:-.01em;
-    margin:0 0 12px;max-width:17ch;animation:rise .5s .06s both;}
-  .sub{font-family:var(--sans);font-weight:400;font-size:14px;line-height:1.55;color:var(--ink-soft);
-    margin:0 0 20px;max-width:40ch;animation:rise .5s .1s both;}
-  .btn-primary{display:inline-flex;align-items:center;gap:8px;background:var(--accent);color:#fff;text-decoration:none;
-    font-family:var(--sans);font-size:14px;font-weight:600;padding:12px 22px;border-radius:7px;
-    box-shadow:0 1px 2px rgba(29,78,216,.15), 0 6px 16px var(--accent-glow);
-    transition:background .18s,box-shadow .18s,transform .18s;animation:rise .5s .18s both;width:fit-content;}
-  .btn-primary:hover{background:var(--accent-dim);transform:translateY(-1px);box-shadow:0 2px 4px rgba(29,78,216,.2), 0 10px 22px var(--accent-glow);}
-
-  /* Donut chart card */
-  .donut-card{flex:1.25;min-width:0;display:flex;flex-direction:column;
-    background:#fff;border:1px solid var(--line);border-radius:14px;padding:26px 30px;
-    box-shadow:0 1px 2px rgba(17,24,21,.04), 0 10px 24px rgba(17,24,21,.06);
-    animation:rise .5s .22s both;}
-  .donut-title{font-family:var(--sans);font-size:15px;font-weight:600;color:var(--ink);margin:0 0 3px;}
-  .donut-sub{font-family:var(--sans);font-size:11.5px;color:var(--ink-soft);margin:0 0 14px;}
-  .donut-def{font-family:var(--sans);font-size:11.5px;color:var(--ink-soft);margin:12px 0 0;
-    padding-top:10px;border-top:1px solid var(--line);min-height:32px;line-height:1.5;}
-  .donut-def b{color:var(--ink);font-weight:600;}
-  .donut-body{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;gap:28px;}
-  .donut-ring-wrap{position:relative;flex-shrink:0;width:172px;height:172px;}
-  .donut-ring-wrap svg{width:100%;height:100%;overflow:visible;}
-  .dseg{cursor:pointer;transition:stroke-width .18s ease, opacity .18s ease;}
-  .dseg.hl{stroke-width:44px;}
-  .donut-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
-    text-align:center;line-height:1.2;pointer-events:none;width:78px;}
-  .donut-center b{display:block;font-family:var(--disp);font-size:23px;font-weight:600;color:var(--ink);}
-  .donut-center span{display:block;font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:.03em;text-transform:uppercase;margin-top:1px;}
-  .donut-legend{display:grid;grid-template-columns:1fr 1fr;gap:11px 18px;}
-  .dl-item{display:flex;align-items:center;gap:7px;font-family:var(--sans);font-size:12.5px;color:var(--ink-soft);
-    line-height:1.3;cursor:pointer;transition:color .18s ease;}
-  .dl-item.hl{color:var(--ink);font-weight:600;}
-  .dl-dot{flex-shrink:0;width:8px;height:8px;border-radius:50%;}
-
-  /* feature row — full width, below the hero/donut row */
-  .feature-row{flex:0 0 auto;display:grid;grid-template-columns:repeat(3,1fr);gap:20px;}
-  .feature-card{background:var(--panel-2);border:1px solid var(--line);border-radius:14px;
-    padding:16px 24px;display:flex;flex-direction:column;justify-content:center;
-    transition:transform .2s ease, box-shadow .2s ease;}
-  .feature-card:hover{transform:translateY(-3px);box-shadow:0 10px 22px rgba(17,24,21,.07);}
-  .feature-icon{width:22px;height:22px;color:var(--accent);margin-bottom:9px;}
-  .feature-card h3{font-family:var(--disp);font-size:15px;font-weight:600;margin:0 0 4px;color:var(--ink);}
-  .feature-card p{font-family:var(--sans);font-size:12.5px;color:var(--ink-soft);margin:0;line-height:1.45;}
-
-  /* Why map trust — simple text panel */
-  .why-row{flex:1 1 auto;min-height:0;display:flex;justify-content:space-between;align-items:stretch;gap:24px;}
-  .for-panel{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;
-    background:var(--accent-soft);border-radius:14px;padding:20px 28px 24px;}
-  .for-panel h2{font-family:var(--sans);font-size:12.5px;font-weight:600;letter-spacing:.01em;
-    color:var(--accent-dim);margin:0 0 8px;}
-  .for-quote{font-family:var(--disp);font-style:italic;font-size:17px;font-weight:500;line-height:1.42;color:var(--ink);margin:0;max-width:42ch;}
-  .why-panel{width:100%;max-width:500px;
-    background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:13px 24px 15px;
-    box-shadow:0 1px 2px rgba(17,24,21,.04), 0 10px 24px rgba(17,24,21,.06);}
-  .why-panel h2{font-family:var(--disp);font-size:14.5px;font-weight:600;margin:0 0 5px;color:var(--ink);}
-  .why-panel p{font-family:var(--sans);font-size:12px;line-height:1.44;color:var(--ink-soft);margin:0;}
-
-  .page-footer{flex:0 0 auto;text-align:center;margin-top:-12px;}
-  .page-footer p{font-family:var(--disp);font-style:italic;font-size:12px;color:var(--muted);margin:0;}
-
-
-  @keyframes rise{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
-
-  @media(max-width:880px){
-    html,body{height:auto;overflow:auto;}
-    .page{height:auto;margin:16px;width:auto;overflow:visible;}
-    .top-row{flex-direction:column;flex:0 0 auto;}
-    .feature-row{grid-template-columns:1fr;}
-    h1{font-size:26px;}
-  }
-</style>
-</head>
-<body>
-<div class="page">
-
-  <div class="top-row">
-    <div class="hero">
-      <h1>Map the trust in your project.</h1>
-      <p class="sub">An interactive map for reflecting on trust across your AI system.</p>
-      <a class="btn-primary" href="login.html">Map your project →</a>
-    </div>
-
-    <div class="donut-card">
-      <p class="donut-title">Trust Network Components</p>
-      <p class="donut-sub">The 7 parts that relate back to your AI system</p>
-      <div class="donut-body">
-        <div class="donut-ring-wrap">
-          <svg viewBox="0 0 190 190">
-            <g transform="rotate(-90 95 95)">
-              <circle class="dseg" data-id="team" data-label="Research Team" cx="95" cy="95" r="76" fill="none" stroke="#7c3aed" stroke-width="38" stroke-dasharray="64.22 413.30" stroke-dashoffset="0"/>
-              <circle class="dseg" data-id="infra" data-label="Trusted Infrastructure" cx="95" cy="95" r="76" fill="none" stroke="#0891b2" stroke-width="38" stroke-dasharray="64.22 413.30" stroke-dashoffset="-68.22"/>
-              <circle class="dseg" data-id="public" data-label="Trust Public" cx="95" cy="95" r="76" fill="none" stroke="#059669" stroke-width="38" stroke-dasharray="64.22 413.30" stroke-dashoffset="-136.44"/>
-              <circle class="dseg" data-id="inter" data-label="Trusted Intermediaries" cx="95" cy="95" r="76" fill="none" stroke="#d97706" stroke-width="38" stroke-dasharray="64.22 413.30" stroke-dashoffset="-204.65"/>
-              <circle class="dseg" data-id="inst" data-label="Trusted Institution" cx="95" cy="95" r="76" fill="none" stroke="#64748b" stroke-width="38" stroke-dasharray="64.22 413.30" stroke-dashoffset="-272.87"/>
-              <circle class="dseg" data-id="proxies" data-label="Trust Proxies" cx="95" cy="95" r="76" fill="none" stroke="#db2777" stroke-width="38" stroke-dasharray="64.22 413.30" stroke-dashoffset="-341.09"/>
-              <circle class="dseg" data-id="reps" data-label="Trusted Representatives" cx="95" cy="95" r="76" fill="none" stroke="#4338ca" stroke-width="38" stroke-dasharray="64.22 413.30" stroke-dashoffset="-409.31"/>
-            </g>
-          </svg>
-          <div class="donut-center"><b id="dcBig">AI</b><span id="dcSmall">System</span></div>
-        </div>
-        <div class="donut-legend">
-          <span class="dl-item" data-id="team"><span class="dl-dot" style="background:#7c3aed"></span>Research Team</span>
-          <span class="dl-item" data-id="infra"><span class="dl-dot" style="background:#0891b2"></span>Trusted Infrastructure</span>
-          <span class="dl-item" data-id="public"><span class="dl-dot" style="background:#059669"></span>Trust Public</span>
-          <span class="dl-item" data-id="inter"><span class="dl-dot" style="background:#d97706"></span>Trusted Intermediaries</span>
-          <span class="dl-item" data-id="inst"><span class="dl-dot" style="background:#64748b"></span>Trusted Institution</span>
-          <span class="dl-item" data-id="proxies"><span class="dl-dot" style="background:#db2777"></span>Trust Proxies</span>
-          <span class="dl-item" data-id="reps"><span class="dl-dot" style="background:#4338ca"></span>Trusted Representatives</span>
-        </div>
-      </div>
-      <p class="donut-def" id="donutDef"><b>AI System</b> is the anchor. Every other part relates back to it. Hover a slice to see how.</p>
-    </div>
-  </div>
-
-  <div class="feature-row">
-    <div class="feature-card">
-      <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="8" r="3"/><path d="M3 20c0-3.3 2.5-6 6-6s6 2.7 6 6"/><path d="M17 8a3 3 0 1 0 0 6"/><path d="M17 14c2.5.3 4 2 4 4"/></svg>
-      <h3>Work together</h3>
-      <p>Create or join a project with an access code.</p>
-    </div>
-    <div class="feature-card">
-      <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>
-      <h3>Save versions</h3>
-      <p>Track progress and history as you go.</p>
-    </div>
-    <div class="feature-card">
-      <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="5" r="2"/><circle cx="5" cy="18" r="2"/><circle cx="19" cy="18" r="2"/><path d="M11 6.6L6 16.4M13 6.6l5 9.8"/></svg>
-      <h3>See the full map</h3>
-      <p>View the whole trust framework at once.</p>
-    </div>
-  </div>
-
-  <div class="why-row">
-    <div class="for-panel">
-      <h2>A reflection tool for AI research teams</h2>
-      <p class="for-quote">"The question isn't whether it's trustworthy, it's where trust is thin."</p>
-    </div>
-    <div class="why-panel">
-      <div class="wp-text">
-        <h2>Why map trust?</h2>
-        <p>Trust in an AI system isn't a single score. It's built through the parts that relate back to it: the team that builds it, the infrastructure it runs on, the public it affects, and others. TRAILS maps each part on its own, so instead of asking is this system trustworthy, you can point to exactly which part is thin, and fix that specific gap.</p>
-      </div>
-    </div>
-  </div>
-
-  <div class="page-footer">
-    <p>Built on the TRAILS trust framework</p>
-  </div>
-
-</div>
-
-<script>
-  /* ---- donut hover interactivity (light: hover only, no click/pin) ---- */
-  var DEFS = {
-    team:'Your team and organization, and the institutions it\'s affiliated with.',
-    infra:'The technologies, algorithms, and datasets your system builds on.',
-    public:'Whose trust you\'re evaluating or hoping to gain, and how they\'ll decide.',
-    inter:'Institutions that affect whether or how your trust public adopts it.',
-    inst:'The institutions your research team is situated within.',
-    proxies:'The criteria and measurements used to assess trustworthiness.',
-    reps:'Who was consulted outside the team to validate how it\'s perceived.'
-  };
-  var dSegs=document.querySelectorAll('.dseg'), dLegend=document.querySelectorAll('.dl-item');
-  var dcBig=document.getElementById('dcBig'), dcSmall=document.getElementById('dcSmall');
-  var dDef=document.getElementById('donutDef');
-  function donutFocus(id){
-    dSegs.forEach(function(s){
-      var match = s.dataset.id===id;
-      s.classList.toggle('hl', match);
-      s.style.opacity = (id && !match) ? .45 : 1;
-    });
-    dLegend.forEach(function(l){ l.classList.toggle('hl', l.dataset.id===id); });
-    if(id){
-      var seg=document.querySelector('.dseg[data-id="'+id+'"]');
-      dcBig.textContent=seg.dataset.label;
-      dcBig.style.fontSize='13px';
-      dcSmall.textContent='node';
-      dDef.innerHTML='<b>'+seg.dataset.label+':</b> '+DEFS[id];
-    } else {
-      dcBig.textContent='AI'; dcBig.style.fontSize='23px'; dcSmall.textContent='System';
-      dDef.innerHTML='<b>AI System</b> is the anchor. Every other part relates back to it. Hover a slice to see how.';
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TRAILS — Trust Network Diagram</title>
+ 
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+ 
+    /* -------------------------------------------------
+       Color + font variables
+    ------------------------------------------------- */
+    :root {
+      --bg: #eef0f4;
+      --panel: #ffffff;
+      --panel-2: #f2f5f3;
+      --line: #e2e7e5;
+      --line-soft: #ccd4d1;
+ 
+      --ink: #101513;
+      --ink-soft: #47504c;
+      --muted: #7a847f;
+ 
+      --accent: #2563eb;
+      --accent-dim: #1d4ed8;
+      --accent-soft: #e8eefe;
+      --accent-glow: rgba(37, 99, 235, 0.16);
+ 
+      --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+      --font-sans: 'Inter', system-ui, sans-serif;
+      --font-serif: 'Source Serif 4', Georgia, serif;
     }
-  }
-  dSegs.forEach(function(s){var id=s.dataset.id;
-    s.addEventListener('mouseenter',function(){donutFocus(id);});
-    s.addEventListener('mouseleave',function(){donutFocus(null);});});
-  dLegend.forEach(function(l){var id=l.dataset.id;
-    l.addEventListener('mouseenter',function(){donutFocus(id);});
-    l.addEventListener('mouseleave',function(){donutFocus(null);});});
-</script>
+ 
+    * {
+      box-sizing: border-box;
+    }
+ 
+    html, body {
+      height: 100%;
+      margin: 0;
+    }
+ 
+    body {
+      font-family: var(--font-sans);
+      color: var(--ink);
+      background: var(--bg);
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+      position: relative;
+      overflow: hidden;
+    }
+ 
+    /* soft glow blobs behind the card */
+    body::before {
+      content: '';
+      position: fixed;
+      top: -220px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 1200px;
+      height: 700px;
+      border-radius: 50%;
+      background: radial-gradient(ellipse at center, rgba(37, 99, 235, 0.22), transparent 68%);
+      filter: blur(20px);
+      pointer-events: none;
+      z-index: 0;
+    }
+ 
+    body::after {
+      content: '';
+      position: fixed;
+      bottom: -260px;
+      right: -160px;
+      width: 640px;
+      height: 520px;
+      border-radius: 50%;
+      background: radial-gradient(ellipse at center, rgba(37, 99, 235, 0.14), transparent 70%);
+      filter: blur(20px);
+      pointer-events: none;
+      z-index: 0;
+    }
+ 
+    /* -------------------------------------------------
+       Main card
+    ------------------------------------------------- */
+    .page {
+      position: relative;
+      z-index: 1;
+      width: calc(100% - 72px);
+      max-width: 1180px;
+      height: calc(100vh - 72px);
+      margin: 36px auto;
+      padding: 32px 40px 2px;
+      display: flex;
+      flex-direction: column;
+      gap: 26px;
+      background: var(--panel);
+      border-radius: 16px;
+      border: 1px solid var(--line);
+      box-shadow:
+        0 1px 3px rgba(16, 21, 19, 0.05),
+        0 24px 56px rgba(16, 21, 19, 0.09);
+      overflow: hidden;
+    }
+ 
+    /* top section: heading on the left, donut chart on the right */
+    .top-row {
+      flex: 0 0 auto;
+      display: flex;
+      gap: 28px;
+      min-height: 0;
+    }
+ 
+    .hero {
+      flex: 0.85;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+ 
+    h1 {
+      font-family: var(--font-serif);
+      font-size: 32px;
+      font-weight: 600;
+      line-height: 1.24;
+      letter-spacing: -0.01em;
+      margin: 0 0 12px;
+      max-width: 17ch;
+      animation: rise 0.5s 0.06s both;
+    }
+ 
+    .sub {
+      font-family: var(--font-sans);
+      font-weight: 400;
+      font-size: 14px;
+      line-height: 1.55;
+      color: var(--ink-soft);
+      margin: 0 0 20px;
+      max-width: 40ch;
+      animation: rise 0.5s 0.1s both;
+    }
+ 
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--accent);
+      color: #fff;
+      text-decoration: none;
+      font-family: var(--font-sans);
+      font-size: 14px;
+      font-weight: 600;
+      padding: 12px 22px;
+      border-radius: 7px;
+      box-shadow:
+        0 1px 2px rgba(29, 78, 216, 0.15),
+        0 6px 16px var(--accent-glow);
+      transition: background 0.18s, box-shadow 0.18s, transform 0.18s;
+      animation: rise 0.5s 0.18s both;
+      width: fit-content;
+    }
+ 
+    .btn-primary:hover {
+      background: var(--accent-dim);
+      transform: translateY(-1px);
+      box-shadow:
+        0 2px 4px rgba(29, 78, 216, 0.2),
+        0 10px 22px var(--accent-glow);
+    }
+ 
+    /* donut chart card */
+    .donut-card {
+      flex: 1.25;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 26px 30px;
+      box-shadow:
+        0 1px 2px rgba(17, 24, 21, 0.04),
+        0 10px 24px rgba(17, 24, 21, 0.06);
+      animation: rise 0.5s 0.22s both;
+    }
+ 
+    .donut-title {
+      font-family: var(--font-sans);
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--ink);
+      margin: 0 0 3px;
+    }
+ 
+    .donut-sub {
+      font-family: var(--font-sans);
+      font-size: 11.5px;
+      color: var(--ink-soft);
+      margin: 0 0 14px;
+    }
+ 
+    .donut-def {
+      font-family: var(--font-sans);
+      font-size: 11.5px;
+      color: var(--ink-soft);
+      margin: 12px 0 0;
+      padding-top: 10px;
+      border-top: 1px solid var(--line);
+      min-height: 32px;
+      line-height: 1.5;
+    }
+ 
+    .donut-def b {
+      color: var(--ink);
+      font-weight: 600;
+    }
+ 
+    .donut-body {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 28px;
+    }
+ 
+    .donut-ring-wrap {
+      position: relative;
+      flex-shrink: 0;
+      width: 172px;
+      height: 172px;
+    }
+ 
+    .donut-ring-wrap svg {
+      width: 100%;
+      height: 100%;
+      overflow: visible;
+    }
+ 
+    /* each ring segment gets thicker + everything else fades when hovered */
+    .dseg {
+      cursor: pointer;
+      transition: stroke-width 0.18s ease, opacity 0.18s ease;
+    }
+ 
+    .dseg.hl {
+      stroke-width: 44px;
+    }
+ 
+    .donut-center {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      line-height: 1.2;
+      pointer-events: none;
+      width: 78px;
+    }
+ 
+    .donut-center b {
+      display: block;
+      font-family: var(--font-serif);
+      font-size: 23px;
+      font-weight: 600;
+      color: var(--ink);
+    }
+ 
+    .donut-center span {
+      display: block;
+      font-family: var(--font-mono);
+      font-size: 9px;
+      color: var(--muted);
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      margin-top: 1px;
+    }
+ 
+    .donut-legend {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 11px 18px;
+    }
+ 
+    .dl-item {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-family: var(--font-sans);
+      font-size: 12.5px;
+      color: var(--ink-soft);
+      line-height: 1.3;
+      cursor: pointer;
+      transition: color 0.18s ease;
+    }
+ 
+    .dl-item.hl {
+      color: var(--ink);
+      font-weight: 600;
+    }
+ 
+    .dl-dot {
+      flex-shrink: 0;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+ 
+    /* three feature cards, full width, under the top row */
+    .feature-row {
+      flex: 0 0 auto;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+ 
+    .feature-card {
+      background: var(--panel-2);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 16px 24px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+ 
+    .feature-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 10px 22px rgba(17, 24, 21, 0.07);
+    }
+ 
+    .feature-icon {
+      width: 22px;
+      height: 22px;
+      color: var(--accent);
+      margin-bottom: 9px;
+    }
+ 
+    .feature-card h3 {
+      font-family: var(--font-serif);
+      font-size: 15px;
+      font-weight: 600;
+      margin: 0 0 4px;
+      color: var(--ink);
+    }
+ 
+    .feature-card p {
+      font-family: var(--font-sans);
+      font-size: 12.5px;
+      color: var(--ink-soft);
+      margin: 0;
+      line-height: 1.45;
+    }
+ 
+    /* "why map trust" section */
+    .why-row {
+      flex: 1 1 auto;
+      min-height: 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: stretch;
+      gap: 24px;
+    }
+ 
+    .for-panel {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      background: var(--accent-soft);
+      border-radius: 14px;
+      padding: 20px 28px 24px;
+    }
+ 
+    .for-panel h2 {
+      font-family: var(--font-sans);
+      font-size: 12.5px;
+      font-weight: 600;
+      letter-spacing: 0.01em;
+      color: var(--accent-dim);
+      margin: 0 0 8px;
+    }
+ 
+    .for-quote {
+      font-family: var(--font-serif);
+      font-style: italic;
+      font-size: 17px;
+      font-weight: 500;
+      line-height: 1.42;
+      color: var(--ink);
+      margin: 0;
+      max-width: 42ch;
+    }
+ 
+    .why-panel {
+      width: 100%;
+      max-width: 500px;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 13px 24px 15px;
+      box-shadow:
+        0 1px 2px rgba(17, 24, 21, 0.04),
+        0 10px 24px rgba(17, 24, 21, 0.06);
+    }
+ 
+    .why-panel h2 {
+      font-family: var(--font-serif);
+      font-size: 14.5px;
+      font-weight: 600;
+      margin: 0 0 5px;
+      color: var(--ink);
+    }
+ 
+    .why-panel p {
+      font-family: var(--font-sans);
+      font-size: 12px;
+      line-height: 1.44;
+      color: var(--ink-soft);
+      margin: 0;
+    }
+ 
+    .page-footer {
+      flex: 0 0 auto;
+      text-align: center;
+      margin-top: -12px;
+    }
+ 
+    .page-footer p {
+      font-family: var(--font-serif);
+      font-style: italic;
+      font-size: 12px;
+      color: var(--muted);
+      margin: 0;
+    }
+ 
+    @keyframes rise {
+      from {
+        opacity: 0;
+        transform: translateY(8px);
+      }
+      to {
+        opacity: 1;
+        transform: none;
+      }
+    }
+ 
+    /* stack everything on small screens */
+    @media (max-width: 880px) {
+      html, body {
+        height: auto;
+        overflow: auto;
+      }
+      .page {
+        height: auto;
+        margin: 16px;
+        width: auto;
+        overflow: visible;
+      }
+      .top-row {
+        flex-direction: column;
+        flex: 0 0 auto;
+      }
+      .feature-row {
+        grid-template-columns: 1fr;
+      }
+      h1 {
+        font-size: 26px;
+      }
+    }
+  </style>
+</head>
+ 
+<body>
+  <div class="page">
+ 
+    <!-- heading + donut chart -->
+    <div class="top-row">
+ 
+      <div class="hero">
+        <h1>Map the trust in your project.</h1>
+        <p class="sub">An interactive map for reflecting on trust across your AI system.</p>
+        <a class="btn-primary" href="login.html">Map your project →</a>
+      </div>
+ 
+      <div class="donut-card">
+        <p class="donut-title">Trust Network Components</p>
+        <p class="donut-sub">The 7 parts that relate back to your AI system</p>
+ 
+        <div class="donut-body">
+          <div class="donut-ring-wrap">
+            <svg viewBox="0 0 190 190">
+              <!-- rotated -90 so the first segment starts at 12 o'clock -->
+              <g transform="rotate(-90 95 95)">
+                <circle class="dseg" data-id="team" data-label="Research Team"
+                        cx="95" cy="95" r="76" fill="none" stroke="#7c3aed" stroke-width="38"
+                        stroke-dasharray="64.22 413.30" stroke-dashoffset="0" />
+                <circle class="dseg" data-id="infra" data-label="Trusted Infrastructure"
+                        cx="95" cy="95" r="76" fill="none" stroke="#0891b2" stroke-width="38"
+                        stroke-dasharray="64.22 413.30" stroke-dashoffset="-68.22" />
+                <circle class="dseg" data-id="public" data-label="Trust Public"
+                        cx="95" cy="95" r="76" fill="none" stroke="#059669" stroke-width="38"
+                        stroke-dasharray="64.22 413.30" stroke-dashoffset="-136.44" />
+                <circle class="dseg" data-id="inter" data-label="Trusted Intermediaries"
+                        cx="95" cy="95" r="76" fill="none" stroke="#d97706" stroke-width="38"
+                        stroke-dasharray="64.22 413.30" stroke-dashoffset="-204.65" />
+                <circle class="dseg" data-id="inst" data-label="Trusted Institution"
+                        cx="95" cy="95" r="76" fill="none" stroke="#64748b" stroke-width="38"
+                        stroke-dasharray="64.22 413.30" stroke-dashoffset="-272.87" />
+                <circle class="dseg" data-id="proxies" data-label="Trust Proxies"
+                        cx="95" cy="95" r="76" fill="none" stroke="#db2777" stroke-width="38"
+                        stroke-dasharray="64.22 413.30" stroke-dashoffset="-341.09" />
+                <circle class="dseg" data-id="reps" data-label="Trusted Representatives"
+                        cx="95" cy="95" r="76" fill="none" stroke="#4338ca" stroke-width="38"
+                        stroke-dasharray="64.22 413.30" stroke-dashoffset="-409.31" />
+              </g>
+            </svg>
+ 
+            <div class="donut-center">
+              <b id="dcBig">AI</b>
+              <span id="dcSmall">System</span>
+            </div>
+          </div>
+ 
+          <div class="donut-legend">
+            <span class="dl-item" data-id="team"><span class="dl-dot" style="background:#7c3aed"></span>Research Team</span>
+            <span class="dl-item" data-id="infra"><span class="dl-dot" style="background:#0891b2"></span>Trusted Infrastructure</span>
+            <span class="dl-item" data-id="public"><span class="dl-dot" style="background:#059669"></span>Trust Public</span>
+            <span class="dl-item" data-id="inter"><span class="dl-dot" style="background:#d97706"></span>Trusted Intermediaries</span>
+            <span class="dl-item" data-id="inst"><span class="dl-dot" style="background:#64748b"></span>Trusted Institution</span>
+            <span class="dl-item" data-id="proxies"><span class="dl-dot" style="background:#db2777"></span>Trust Proxies</span>
+            <span class="dl-item" data-id="reps"><span class="dl-dot" style="background:#4338ca"></span>Trusted Representatives</span>
+          </div>
+        </div>
+ 
+        <p class="donut-def" id="donutDef">
+          <b>AI System</b> is the anchor. Every other part relates back to it. Hover a slice to see how.
+        </p>
+      </div>
+ 
+    </div>
+ 
+    <!-- three quick feature callouts -->
+    <div class="feature-row">
+      <div class="feature-card">
+        <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <circle cx="9" cy="8" r="3" />
+          <path d="M3 20c0-3.3 2.5-6 6-6s6 2.7 6 6" />
+          <path d="M17 8a3 3 0 1 0 0 6" />
+          <path d="M17 14c2.5.3 4 2 4 4" />
+        </svg>
+        <h3>Work together</h3>
+        <p>Create or join a project with an access code.</p>
+      </div>
+ 
+      <div class="feature-card">
+        <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <circle cx="12" cy="12" r="9" />
+          <path d="M12 7v5l3.5 2" />
+        </svg>
+        <h3>Save versions</h3>
+        <p>Track progress and history as you go.</p>
+      </div>
+ 
+      <div class="feature-card">
+        <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <circle cx="12" cy="5" r="2" />
+          <circle cx="5" cy="18" r="2" />
+          <circle cx="19" cy="18" r="2" />
+          <path d="M11 6.6L6 16.4M13 6.6l5 9.8" />
+        </svg>
+        <h3>See the full map</h3>
+        <p>View the whole trust framework at once.</p>
+      </div>
+    </div>
+ 
+    <!-- why this matters -->
+    <div class="why-row">
+      <div class="for-panel">
+        <h2>A reflection tool for AI research teams</h2>
+        <p class="for-quote">"The question isn't whether it's trustworthy, it's where trust is thin."</p>
+      </div>
+ 
+      <div class="why-panel">
+        <div class="wp-text">
+          <h2>Why map trust?</h2>
+          <p>
+            Trust in an AI system isn't a single score. It's built through the parts that relate back to it:
+            the team that builds it, the infrastructure it runs on, the public it affects, and others.
+            TRAILS maps each part on its own, so instead of asking is this system trustworthy,
+            you can point to exactly which part is thin, and fix that specific gap.
+          </p>
+        </div>
+      </div>
+    </div>
+ 
+    <div class="page-footer">
+      <p>Built on the TRAILS trust framework</p>
+    </div>
+ 
+  </div>
+ 
+  <script>
+    // Short descriptions shown under the donut when a segment is hovered.
+    var segmentDescriptions = {
+      team: 'Your team and organization, and the institutions it\'s affiliated with.',
+      infra: 'The technologies, algorithms, and datasets your system builds on.',
+      public: 'Whose trust you\'re evaluating or hoping to gain, and how they\'ll decide.',
+      inter: 'Institutions that affect whether or how your trust public adopts it.',
+      inst: 'The institutions your research team is situated within.',
+      proxies: 'The criteria and measurements used to assess trustworthiness.',
+      reps: 'Who was consulted outside the team to validate how it\'s perceived.'
+    };
+ 
+    var ringSegments = document.querySelectorAll('.dseg');
+    var legendItems = document.querySelectorAll('.dl-item');
+ 
+    var centerLabelBig = document.getElementById('dcBig');
+    var centerLabelSmall = document.getElementById('dcSmall');
+    var definitionText = document.getElementById('donutDef');
+ 
+    // Highlights a single ring segment (and its legend entry), or clears
+    // the highlight entirely when called with no id.
+    function focusSegment(id) {
+      ringSegments.forEach(function (segment) {
+        var isMatch = segment.dataset.id === id;
+        segment.classList.toggle('hl', isMatch);
+        segment.style.opacity = (id && !isMatch) ? 0.45 : 1;
+      });
+ 
+      legendItems.forEach(function (item) {
+        item.classList.toggle('hl', item.dataset.id === id);
+      });
+ 
+      if (id) {
+        var segment = document.querySelector('.dseg[data-id="' + id + '"]');
+        centerLabelBig.textContent = segment.dataset.label;
+        centerLabelBig.style.fontSize = '13px';
+        centerLabelSmall.textContent = 'node';
+        definitionText.innerHTML = '<b>' + segment.dataset.label + ':</b> ' + segmentDescriptions[id];
+      } else {
+        centerLabelBig.textContent = 'AI';
+        centerLabelBig.style.fontSize = '23px';
+        centerLabelSmall.textContent = 'System';
+        definitionText.innerHTML = '<b>AI System</b> is the anchor. Every other part relates back to it. Hover a slice to see how.';
+      }
+    }
+ 
+    ringSegments.forEach(function (segment) {
+      var id = segment.dataset.id;
+      segment.addEventListener('mouseenter', function () { focusSegment(id); });
+      segment.addEventListener('mouseleave', function () { focusSegment(null); });
+    });
+ 
+    legendItems.forEach(function (item) {
+      var id = item.dataset.id;
+      item.addEventListener('mouseenter', function () { focusSegment(id); });
+      item.addEventListener('mouseleave', function () { focusSegment(null); });
+    });
+  </script>
 </body>
 </html>
